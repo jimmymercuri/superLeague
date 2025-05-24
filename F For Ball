@@ -1,0 +1,90 @@
+-- LocalScript inside StarterPlayerScripts
+
+local Players = game:GetService("Players")
+local UserInputService = game:GetService("UserInputService")
+local LocalPlayer = Players.LocalPlayer
+
+-- Create GUI
+local screenGui = Instance.new("ScreenGui")
+screenGui.Name = "BallPromptGui"
+screenGui.ResetOnSpawn = false
+screenGui.Parent = LocalPlayer:WaitForChild("PlayerGui")
+
+local textLabel = Instance.new("TextLabel")
+textLabel.Name = "BallPrompt"
+textLabel.Size = UDim2.new(0.3, 0, 0.1, 0)
+textLabel.Position = UDim2.new(0.35, 0, 0.05, 0)
+textLabel.Text = "Press F for Ball"
+textLabel.TextScaled = true
+textLabel.BackgroundTransparency = 0.3
+textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
+textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
+textLabel.Parent = screenGui
+
+-- Function to teleport local player to a part
+-- Function to safely teleport local player to a part
+local function teleportTo(part)
+	local character = LocalPlayer.Character
+	if not character or not part then return end
+
+	local humanoid = character:FindFirstChildOfClass("Humanoid")
+	if not humanoid then return end
+
+	-- Disable physics-related states temporarily
+	humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
+	humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
+	humanoid.PlatformStand = true
+
+	-- Move character
+	character:PivotTo(part.CFrame + Vector3.new(0, 3, 0))
+
+	-- Small delay to allow physics to stabilize
+	task.wait(0.1)
+
+	-- Re-enable normal movement
+	humanoid.PlatformStand = false
+	humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
+
+	-- Re-enable physics states
+	humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
+	humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
+end
+
+
+-- Function to find Ball with Texture and teleport
+local function findBallAndTeleport()
+	local ballWithTexture = nil
+
+	for _, player in pairs(Players:GetPlayers()) do
+		if player.Character then
+			local ball = player.Character:FindFirstChild("Ball")
+			if ball and ball:IsA("BasePart") then
+				local texture = ball:FindFirstChild("Texture")
+				if texture then
+					ballWithTexture = ball
+					break
+				end
+			end
+		end
+	end
+
+	if ballWithTexture then
+		teleportTo(ballWithTexture)
+	else
+		local junk = workspace:FindFirstChild("Junk")
+		if junk then
+			local football = junk:FindFirstChild("Football")
+			if football and football:IsA("BasePart") then
+				teleportTo(football)
+			end
+		end
+	end
+end
+
+-- Detect key press
+UserInputService.InputBegan:Connect(function(input, gameProcessed)
+	if gameProcessed then return end
+	if input.KeyCode == Enum.KeyCode.F then
+		findBallAndTeleport()
+	end
+end)
