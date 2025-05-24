@@ -21,8 +21,7 @@ textLabel.BackgroundColor3 = Color3.fromRGB(0, 0, 0)
 textLabel.TextColor3 = Color3.fromRGB(255, 255, 255)
 textLabel.Parent = screenGui
 
--- Function to teleport local player to a part
--- Function to safely teleport local player to a part
+-- Safe teleport function
 local function teleportTo(part)
 	local character = LocalPlayer.Character
 	if not character or not part then return end
@@ -30,33 +29,29 @@ local function teleportTo(part)
 	local humanoid = character:FindFirstChildOfClass("Humanoid")
 	if not humanoid then return end
 
-	-- Disable physics-related states temporarily
+	-- Disable ragdoll/flop physics
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, false)
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, false)
 	humanoid.PlatformStand = true
 
-	-- Move character
+	-- Move entire character
 	character:PivotTo(part.CFrame + Vector3.new(0, 3, 0))
 
-	-- Small delay to allow physics to stabilize
 	task.wait(0.1)
 
-	-- Re-enable normal movement
+	-- Restore control
 	humanoid.PlatformStand = false
 	humanoid:ChangeState(Enum.HumanoidStateType.GettingUp)
-
-	-- Re-enable physics states
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.FallingDown, true)
 	humanoid:SetStateEnabled(Enum.HumanoidStateType.Ragdoll, true)
 end
 
-
--- Function to find Ball with Texture and teleport
+-- Ball detection and teleport logic
 local function findBallAndTeleport()
 	local ballWithTexture = nil
 
 	for _, player in pairs(Players:GetPlayers()) do
-		if player.Character then
+		if player ~= LocalPlayer and player.Character then
 			local ball = player.Character:FindFirstChild("Ball")
 			if ball and ball:IsA("BasePart") then
 				local texture = ball:FindFirstChild("Texture")
@@ -81,7 +76,7 @@ local function findBallAndTeleport()
 	end
 end
 
--- Detect key press
+-- Input listener
 UserInputService.InputBegan:Connect(function(input, gameProcessed)
 	if gameProcessed then return end
 	if input.KeyCode == Enum.KeyCode.F then
